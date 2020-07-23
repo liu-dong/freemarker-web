@@ -126,12 +126,13 @@ public class UploadDownloadUtils {
 
     /**
      * 上传附件到本地 (数据流)
+     * (需要配置multipartResolver)
      *
      * @param file
      * @return
      * @throws IOException
      */
-    @RequestMapping("uploadThird")
+    @RequestMapping(value = "uploadThird",method = RequestMethod.POST)
     public Map<String, Object> uploadThird(@RequestParam("file") CommonsMultipartFile file) throws IOException {
         long startTime = System.currentTimeMillis();
         Map<String, Object> result = new HashMap<>();
