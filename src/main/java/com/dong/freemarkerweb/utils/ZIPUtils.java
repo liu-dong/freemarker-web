@@ -29,9 +29,7 @@ public class ZIPUtils {
      * @param dirFile 压缩源文件路径
      */
     public static List<File> getAllFile(File dirFile) {
-
         List<File> fileList = new ArrayList<>();
-
         File[] files = dirFile.listFiles();
         if (files != null) {
             for (File file : files) {//文件
@@ -99,7 +97,6 @@ public class ZIPUtils {
 
             file = new File(file, dirs[dirs.length - 1]);//创建文件
 
-            return file;
         } else {
             if (!file.exists()) {//若目标路径的目录不存在，则创建
                 file.mkdirs();
@@ -112,8 +109,8 @@ public class ZIPUtils {
 
             file = new File(file, dirs[0]);//创建文件
 
-            return file;
         }
+        return file;
 
     }
 
