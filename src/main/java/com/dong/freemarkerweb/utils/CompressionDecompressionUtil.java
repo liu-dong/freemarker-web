@@ -14,7 +14,7 @@ public class CompressionDecompressionUtil {
     public static void main(String[] args) {
         try {
 //            CompressionDecompressionUtil.zipFile("F:\\MyUploadFile\\瀑布.jpg", "F:\\MyUploadFile\\瀑布1.zip");
-            CompressionDecompressionUtil.zipFolder("F:\\MyUploadFile\\瀑布1", "F:\\MyUploadFile\\瀑布2.zip");
+            CompressionDecompressionUtil.zipFolder("E:\\MyUploadFile\\桥洞", "E:\\MyUploadFile\\桥洞1.zip");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -67,13 +67,13 @@ public class CompressionDecompressionUtil {
         zipOutputStream.setComment("com.dong.zipFolder");//设置注释
         File[] files = folder.listFiles();
         if (files != null && files.length == 0) {
-            zipOutputStream.putNextEntry(new ZipEntry(folder.getName() + File.separator));//设置ZipEntry对象
+            zipOutputStream.putNextEntry(new ZipEntry(folder.getName() + "/"));//设置ZipEntry对象
             zipOutputStream.closeEntry();
         }else {
             System.out.println("该文件夹没有文件");
             return;
         }
-//        zipOutputStream.close();//关闭输出流
+        zipOutputStream.close();//关闭输出流
         System.out.println("文件夹压缩成功");
     }
 

@@ -10,22 +10,22 @@ import java.util.zip.ZipOutputStream;
  * @date 2020/8/4 17:34
  */
 public class ZipFileWithTier {
-    private static final String srcFiles = "F:\\MyUploadFile\\瀑布1";
-    private static final String zipPath = "F:\\MyUploadFile\\瀑布2.zip";
+    private static final String srcFiles = "E:\\MyUploadFile\\桥洞";
+    private static final String zipPath = "E:\\MyUploadFile\\桥洞3.zip";
     private static final String unzipPath = "C:\\temp\\Lemur\\";
 
     public static void main(String[] args) {
-        new ZipFileWithTier().zipFile();
+            new ZipFileWithTier().zipFile();
     }
 
-    public void zipFile(){
+    public void zipFile() {
         File file = new File(zipPath);
-        if(file.exists())
+        if (file.exists())
             file.delete();
         zipFileWithTier(srcFiles, zipPath);
     }
 
-    public void upZipFile(){
+    public void upZipFile() {
         try {
             unzipFilesWithTier(readFileByte(zipPath), unzipPath + File.separator);
         } catch (IOException e) {
@@ -41,7 +41,6 @@ public class ZipFileWithTier {
      */
     public static void zipFileWithTier(String srcFiles, String zipPath) {
         try {
-
             FileOutputStream zipFile = new FileOutputStream(zipPath);
             BufferedOutputStream buffer = new BufferedOutputStream(zipFile);
             ZipOutputStream out = new ZipOutputStream(buffer);
@@ -162,5 +161,22 @@ public class ZipFileWithTier {
             }
         }
         return "success";
+    }
+
+    public static void zipFolder1(String folderPath, String zipFolderPath) throws IOException {
+        FileOutputStream zipFile = new FileOutputStream(zipFolderPath);
+        BufferedOutputStream buffer = new BufferedOutputStream(zipFile);
+        ZipOutputStream out = new ZipOutputStream(buffer);
+        File file = new File(folderPath);
+        if (file.isDirectory()) {
+            if (file.listFiles().length == 0) {
+                System.out.println("" + file.getName() + "/");
+                ZipEntry zipEntry = new ZipEntry("" + file.getName() + "/");
+                out.putNextEntry(zipEntry);
+                out.closeEntry();
+            }
+        }
+        out.close();
+        System.out.println("文件夹压缩成功");
     }
 }
