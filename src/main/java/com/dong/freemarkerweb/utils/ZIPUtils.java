@@ -1,9 +1,11 @@
 package com.dong.freemarkerweb.utils;
 
-import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.zip.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * 压缩/解压文件
@@ -13,207 +15,115 @@ import java.util.zip.*;
 public class ZIPUtils {
 
 
-    /**
-     * 缓冲器大小
-     */
-    private static final int BUFFER = 512;
 
-    /**
-     * 压缩得到的文件的后缀名
-     */
-    private static final String SUFFIX = ".zip";
+    public static void main(String[] args) {
+        String filePath = "F:\\MyUploadFile\\1";
+        File file = new File(filePath);
+        String zipFilePath = "F:\\MyUploadFile\\空文件夹12.zip";
+        File zipFile = new File(zipFilePath);
 
-    /**
-     * 得到源文件路径的所有文件
-     *
-     * @param dirFile 压缩源文件路径
-     */
-    public static List<File> getAllFile(File dirFile) {
-        List<File> fileList = new ArrayList<>();
-        File[] files = dirFile.listFiles();
-        if (files != null) {
-            for (File file : files) {//文件
-                if (file.isFile()) {
-                    fileList.add(file);
-                    System.out.println("add file:" + file.getName());
-                } else {//目录
-                    if (file.listFiles() != null) {//非空目录
-                        fileList.addAll(getAllFile(file));//把递归文件加到fileList中
-                    } else {//空目录
-                        fileList.add(file);
-                        System.out.println("add empty dir:" + file.getName());
-                    }
-                }
-            }
-        }
-        return fileList;
-    }
-
-    /**
-     * 获取相对路径
-     *
-     * @param dirPath 源文件路径
-     * @param file    准备压缩的单个文件
-     */
-    public static String getRelativePath(String dirPath, File file) {
-        File dirFile = new File(dirPath);
-        StringBuilder relativePath = new StringBuilder(file.getName());
-
-        while (true) {
-            file = file.getParentFile();
-            if (file == null) break;
-            if (file.equals(dirFile)) {
-                break;
-            } else {
-                relativePath.insert(0, file.getName() + "/");
-            }
-        }
-        return relativePath.toString();
-    }
-
-
-    /**
-     * @param destPath 解压目标路径
-     * @param fileName 解压文件的相对路径
-     */
-    public static File createFile(String destPath, String fileName) {
-
-        String[] dirs = fileName.split("/");//将文件名的各级目录分解
-        File file = new File(destPath);
-
-        if (dirs.length > 1) {//文件有上级目录
-            for (int i = 0; i < dirs.length - 1; i++) {
-                file = new File(file, dirs[i]);//依次创建文件对象知道文件的上一级目录
-            }
-
-            if (!file.exists()) {
-                file.mkdirs();//文件对应目录若不存在，则创建
-                try {
-                    System.out.println("mkdirs: " + file.getCanonicalPath());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            file = new File(file, dirs[dirs.length - 1]);//创建文件
-
-        } else {
-            if (!file.exists()) {//若目标路径的目录不存在，则创建
-                file.mkdirs();
-                try {
-                    System.out.println("mkdirs: " + file.getCanonicalPath());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            file = new File(file, dirs[0]);//创建文件
-
-        }
-        return file;
-
-    }
-
-    /**
-     * 没有指定压缩目标路径进行压缩,用默认的路径进行压缩
-     *
-     * @param dirPath 压缩源文件路径
-     */
-    public static void compress(String dirPath) {
-
-        int firstIndex = dirPath.indexOf("/");
-        int lastIndex = dirPath.lastIndexOf("/");
-        String zipFileName = dirPath.substring(0, firstIndex + 1) + dirPath.substring(lastIndex + 1);
-        compress(dirPath, zipFileName);
+        zipFiles(file,zipFile);
     }
 
     /**
      * 压缩文件
      *
-     * @param dirPath     压缩源文件路径
-     * @param zipFileName 压缩目标文件路径
+     * @param srcfile
      */
-    public static void compress(String dirPath, String zipFileName) {
+    public static void zipFiles(File srcfile, File targetFile) {
 
-
-        zipFileName = zipFileName + SUFFIX;//添加文件的后缀名
-
-        File dirFile = new File(dirPath);
-        List<File> fileList = getAllFile(dirFile);
-
-        byte[] buffer = new byte[BUFFER];
-        ZipEntry zipEntry;
-        int readLength;     //每次读取出来的长度
-
+        ZipOutputStream out = null;
         try {
-            // 对输出文件做CRC32校验
-            CheckedOutputStream cos = new CheckedOutputStream(new FileOutputStream(
-                    zipFileName), new CRC32());
-            ZipOutputStream zos = new ZipOutputStream(cos);
+            out = new ZipOutputStream(new FileOutputStream(targetFile));
 
-            for (File file : fileList) {
-
-                if (file.isFile()) {   //若是文件，则压缩文件
-
-                    zipEntry = new ZipEntry(getRelativePath(dirPath, file));  //
-                    zipEntry.setSize(file.length());
-                    zipEntry.setTime(file.lastModified());
-                    zos.putNextEntry(zipEntry);
-
-                    InputStream is = new BufferedInputStream(new FileInputStream(file));
-
-                    while ((readLength = is.read(buffer, 0, BUFFER)) != -1) {
-                        zos.write(buffer, 0, readLength);
-                    }
-                    is.close();
-                    System.out.println("file compress:" + file.getCanonicalPath());
-                } else {     //若是空目录，则写入zip条目中
-
-                    zipEntry = new ZipEntry(getRelativePath(dirPath, file));
-                    zos.putNextEntry(zipEntry);
-                    System.out.println("dir compress: " + file.getCanonicalPath() + "/");
+            if (srcfile.isFile()) {
+                zipFile(srcfile, out, "");
+            } else {
+                File[] list = srcfile.listFiles();
+                for (int i = 0; i < list.length; i++) {
+                    compress(list[i], out, "");
                 }
             }
-            zos.close();  //最后得关闭流，不然压缩最后一个文件会出错
-        } catch (IOException e) {
+
+            System.out.println("压缩完毕");
+        } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            try {
+                if (out != null)
+                    out.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     /**
-     * 解压
+     * 压缩文件夹里的文件
+     * 起初不知道是文件还是文件夹--- 统一调用该方法
+     *
+     * @param file
+     * @param out
+     * @param basedir
      */
-    public static void decompress(String zipFileName, String destPath) {
+    private static void compress(File file, ZipOutputStream out, String basedir) {
+        /* 判断是目录还是文件 */
+        if (file.isDirectory()) {
+            zipDirectory(file, out, basedir);
+        } else {
+            zipFile(file, out, basedir);
+        }
+    }
+
+    /**
+     * 压缩单个文件
+     *
+     * @param srcfile
+     */
+    public static void zipFile(File srcfile, ZipOutputStream out, String basedir) {
+        if (!srcfile.exists())
+            return;
+
+        byte[] buf = new byte[1024];
+        FileInputStream in = null;
 
         try {
+            int len;
+            in = new FileInputStream(srcfile);
+            out.putNextEntry(new ZipEntry(basedir + srcfile.getName()));
 
-            zipFileName = zipFileName + SUFFIX;
-            ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFileName));
-            ZipEntry zipEntry = null;
-            byte[] buffer = new byte[BUFFER];//缓冲器
-            int readLength = 0;//每次读出来的长度
-            while ((zipEntry = zis.getNextEntry()) != null) {
-                if (zipEntry.isDirectory()) {//若是目录
-                    File file = new File(destPath + "/" + zipEntry.getName());
-                    if (!file.exists()) {
-                        file.mkdirs();
-                        System.out.println("mkdirs:" + file.getCanonicalPath());
-                        continue;
-                    }
-                }//若是文件
-                File file = createFile(destPath, zipEntry.getName());
-                System.out.println("file created: " + file.getCanonicalPath());
-                OutputStream os = new FileOutputStream(file);
-                while ((readLength = zis.read(buffer, 0, BUFFER)) != -1) {
-                    os.write(buffer, 0, readLength);
-                }
-                os.close();
-                System.out.println("file uncompressed: " + file.getCanonicalPath());
+            while ((len = in.read(buf)) > 0) {
+                out.write(buf, 0, len);
             }
-
-
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            try {
+                if (out != null)
+                    out.closeEntry();
+                if (in != null)
+                    in.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * 压缩文件夹
+     *
+     * @param dir
+     * @param out
+     * @param basedir
+     */
+    public static void zipDirectory(File dir, ZipOutputStream out, String basedir) {
+        if (!dir.exists())
+            return;
+
+        File[] files = dir.listFiles();
+        for (int i = 0; i < files.length; i++) {
+            /* 递归 */
+            compress(files[i], out, basedir + dir.getName() + "/");
         }
     }
 }
