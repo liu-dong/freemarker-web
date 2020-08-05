@@ -16,7 +16,7 @@ public class ZIPUtils {
 //            ZIPUtils.zip("F:\\MyUploadFile\\瀑布.jpg", "F:\\MyUploadFile\\瀑布.zip");
 //            ZIPUtils.zip("F:\\MyUploadFile\\瀑布", "F:\\MyUploadFile\\瀑布文件夹.zip");
 //            ZIPUtils.zip("F:\\MyUploadFile\\1", "F:\\MyUploadFile\\11.zip");
-            ZIPUtils.zip("F:\\MyUploadFile\\12", "F:\\MyUploadFile\\13.zip");
+        ZIPUtils.zip("F:\\MyUploadFile\\12", "F:\\MyUploadFile\\13.zip");
     }
 
 
@@ -25,7 +25,7 @@ public class ZIPUtils {
      *
      * @param filePath    待压缩文件的路径
      * @param zipFilePath 压缩后文件的路径
-     * @throws IOException
+     * @throws IOException IO流异常
      */
     public static void zip(String filePath, String zipFilePath) throws IOException {
         File file = new File(filePath);//待压缩文件
@@ -47,9 +47,10 @@ public class ZIPUtils {
     /**
      * 判断是文件还是文件夹
      *
-     * @param file
-     * @param zipOutputStream
-     * @throws IOException
+     * @param file 文件
+     * @param zipOutputStream 压缩输出流
+     * @param path 待压缩路径
+     * @throws IOException IO流异常
      */
     public static void isFileFolder(File file, ZipOutputStream zipOutputStream, String path) throws IOException {
         if (file.isDirectory()) {
@@ -61,10 +62,10 @@ public class ZIPUtils {
 
     /**
      * 压缩文件
-     *
-     * @param file            待压缩文件
+     * @param file 待压缩文件
      * @param zipOutputStream 压缩文件输出流
-     * @throws IOException
+     * @param path  待压缩路径
+     * @throws IOException IO流异常
      */
     public static void zipFile(File file, ZipOutputStream zipOutputStream, String path) throws IOException {
         InputStream inputStream = new FileInputStream(file);//定义文件的输入流
@@ -79,10 +80,10 @@ public class ZIPUtils {
 
     /**
      * 压缩文件夹
-     *
-     * @param folder          待压缩文件夹
+     * @param folder 待压缩文件夹
      * @param zipOutputStream 压缩文件输出流
-     * @throws IOException
+     * @param path 待压缩路径
+     * @throws IOException IO流异常
      */
     public static void zipFolder(File folder, ZipOutputStream zipOutputStream, String path) throws IOException {
         File[] files = folder.listFiles();
@@ -97,5 +98,4 @@ public class ZIPUtils {
             }
         }
     }
-
 }
