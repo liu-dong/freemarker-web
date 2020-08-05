@@ -1,9 +1,6 @@
 package com.dong.freemarkerweb.utils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -15,115 +12,90 @@ import java.util.zip.ZipOutputStream;
 public class ZIPUtils {
 
 
+    public static void main(String[] args) throws IOException {
+//            ZIPUtils.zip("F:\\MyUploadFile\\瀑布.jpg", "F:\\MyUploadFile\\瀑布.zip");
+//            ZIPUtils.zip("F:\\MyUploadFile\\瀑布", "F:\\MyUploadFile\\瀑布文件夹.zip");
+//            ZIPUtils.zip("F:\\MyUploadFile\\1", "F:\\MyUploadFile\\11.zip");
+            ZIPUtils.zip("F:\\MyUploadFile\\12", "F:\\MyUploadFile\\13.zip");
+    }
 
-    public static void main(String[] args) {
-        String filePath = "F:\\MyUploadFile\\1";
-        File file = new File(filePath);
-        String zipFilePath = "F:\\MyUploadFile\\空文件夹12.zip";
-        File zipFile = new File(zipFilePath);
 
-        zipFiles(file,zipFile);
+    /**
+     * 压缩文件
+     *
+     * @param filePath    待压缩文件的路径
+     * @param zipFilePath 压缩后文件的路径
+     * @throws IOException
+     */
+    public static void zip(String filePath, String zipFilePath) throws IOException {
+        File file = new File(filePath);//待压缩文件
+        if (!file.exists()) {
+            System.out.println("没有该文件");
+            return;
+        }
+        File zipFile = new File(zipFilePath);//压缩文件
+        if (zipFile.exists()) {//如果存在则删除
+            zipFile.delete();
+        }
+        ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(zipFile));// 声明压缩流对象
+        zipOutputStream.setComment("com.dong.zipFile");//设置注释
+        isFileFolder(file, zipOutputStream, "");
+        zipOutputStream.close();//关闭输出流
+        System.out.println("压缩成功");
+    }
+
+    /**
+     * 判断是文件还是文件夹
+     *
+     * @param file
+     * @param zipOutputStream
+     * @throws IOException
+     */
+    public static void isFileFolder(File file, ZipOutputStream zipOutputStream, String path) throws IOException {
+        if (file.isDirectory()) {
+            zipFolder(file, zipOutputStream, path);
+        } else {
+            zipFile(file, zipOutputStream, path);
+        }
     }
 
     /**
      * 压缩文件
      *
-     * @param srcfile
+     * @param file            待压缩文件
+     * @param zipOutputStream 压缩文件输出流
+     * @throws IOException
      */
-    public static void zipFiles(File srcfile, File targetFile) {
-
-        ZipOutputStream out = null;
-        try {
-            out = new ZipOutputStream(new FileOutputStream(targetFile));
-
-            if (srcfile.isFile()) {
-                zipFile(srcfile, out, "");
-            } else {
-                File[] list = srcfile.listFiles();
-                for (int i = 0; i < list.length; i++) {
-                    compress(list[i], out, "");
-                }
-            }
-
-            System.out.println("压缩完毕");
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (out != null)
-                    out.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+    public static void zipFile(File file, ZipOutputStream zipOutputStream, String path) throws IOException {
+        InputStream inputStream = new FileInputStream(file);//定义文件的输入流
+        zipOutputStream.putNextEntry(new ZipEntry(path + file.getName() + File.separator));//设置ZipEntry对象
+        int temp;
+        while ((temp = inputStream.read()) != -1) {//读取内容
+            zipOutputStream.write(temp);//压缩输出
         }
-    }
-
-    /**
-     * 压缩文件夹里的文件
-     * 起初不知道是文件还是文件夹--- 统一调用该方法
-     *
-     * @param file
-     * @param out
-     * @param basedir
-     */
-    private static void compress(File file, ZipOutputStream out, String basedir) {
-        /* 判断是目录还是文件 */
-        if (file.isDirectory()) {
-            zipDirectory(file, out, basedir);
-        } else {
-            zipFile(file, out, basedir);
-        }
-    }
-
-    /**
-     * 压缩单个文件
-     *
-     * @param srcfile
-     */
-    public static void zipFile(File srcfile, ZipOutputStream out, String basedir) {
-        if (!srcfile.exists())
-            return;
-
-        byte[] buf = new byte[1024];
-        FileInputStream in = null;
-
-        try {
-            int len;
-            in = new FileInputStream(srcfile);
-            out.putNextEntry(new ZipEntry(basedir + srcfile.getName()));
-
-            while ((len = in.read(buf)) > 0) {
-                out.write(buf, 0, len);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (out != null)
-                    out.closeEntry();
-                if (in != null)
-                    in.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        zipOutputStream.closeEntry();
+        inputStream.close();//关闭输入流
     }
 
     /**
      * 压缩文件夹
      *
-     * @param dir
-     * @param out
-     * @param basedir
+     * @param folder          待压缩文件夹
+     * @param zipOutputStream 压缩文件输出流
+     * @throws IOException
      */
-    public static void zipDirectory(File dir, ZipOutputStream out, String basedir) {
-        if (!dir.exists())
-            return;
-
-        File[] files = dir.listFiles();
-        for (int i = 0; i < files.length; i++) {
-            /* 递归 */
-            compress(files[i], out, basedir + dir.getName() + "/");
+    public static void zipFolder(File folder, ZipOutputStream zipOutputStream, String path) throws IOException {
+        File[] files = folder.listFiles();
+        assert files != null;
+        if (files.length == 0) {
+            zipOutputStream.putNextEntry(new ZipEntry(path + folder.getName() + "/"));//设置ZipEntry对象
+            zipOutputStream.closeEntry();
+        } else {
+            path += folder.getName() + File.separator;
+            for (File file : files) {
+                isFileFolder(file, zipOutputStream, path);
+            }
         }
     }
+
 }
