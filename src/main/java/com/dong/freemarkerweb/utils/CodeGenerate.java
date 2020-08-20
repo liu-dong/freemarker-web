@@ -8,9 +8,10 @@ import freemarker.template.TemplateExceptionHandler;
 
 import java.io.*;
 import java.sql.*;
-import java.util.*;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author LD
@@ -76,7 +77,8 @@ public class CodeGenerate {
      * 列信息数组的集合。List中每个元素是一个数组，代表一个列的信息；
      * 每个数组的元素1是列名，元素2是注释，元素3是类型
      *
-     * @return
+     * @param tableName 表名
+     * @return 返回字段信息
      */
     public static List<String[]> getTableColumnsInfo(String tableName) throws Exception {
         openConnection();
@@ -95,15 +97,14 @@ public class CodeGenerate {
     /**
      * 获取数据
      *
-     * @param packageName
-     * @param tableName
-     * @return
-     * @throws Exception
+     * @param tableName   表名
+     * @return 返回元数据
+     * @throws Exception 异常
      */
-    private static Map<String, Object> getData(String packageName, String tableName) throws Exception {
+    private static Map<String, Object> getData(String tableName, String classAnnotation) throws Exception {
         Map<String, Object> result = new HashMap<>();
-        result.put("packageName", packageName);
         result.put("className", tableName);
+        result.put("classAnnotation", classAnnotation);
         result.put("author", System.getenv().get("USERNAME"));//获取电脑名称为创建人
         List<String[]> tableColumnsInfo = getTableColumnsInfo(tableName);
         List<Attribute> attributeList = new ArrayList<>();
@@ -117,8 +118,8 @@ public class CodeGenerate {
     /**
      * 转换数据类型
      *
-     * @param dataType
-     * @return
+     * @param dataType 数据类型
+     * @return 返回转换后的数据类型
      */
     public static String convertDataType(String dataType) {
         String result;
@@ -145,65 +146,91 @@ public class CodeGenerate {
     /**
      * 转为驼峰
      *
-     * @param columnName
-     * @return
+     * @param columnName 字段名
+     * @return 返回转换后的字段名
      */
     public static String toCamel(String columnName) {
-        String result = "";
+        StringBuilder result = new StringBuilder();
         columnName = columnName.toLowerCase();
         if (!columnName.contains("_")) {
             // 不含下划线，仅将首字母小写
             return columnName;
         } else {
-            String string[] = columnName.split("_");
+            String[] string = columnName.split("_");
             for (int i = 0; i < string.length; i++) {
                 if (i > 0) {
                     string[i] = string[i].substring(0, 1).toUpperCase() + string[i].substring(1);
                 }
-                result += string[i];
+                result.append(string[i]);
             }
         }
-        return result;
+        return result.toString();
     }
 
     /**
      * 生成代码
      *
-     * @param map 元数据
+     * @param map          元数据
+     * @param packageName  包命
+     * @param fileName     文件名
+     * @param templateName 模板名
      * @throws IOException
      * @throws TemplateException
      */
-    public void generate(Map<String, Object> map, String packageName) throws IOException, TemplateException {
+    public void generate(Map<String, Object> map, String packageName, String fileName, String templateName) throws IOException, TemplateException {
         Configuration configuration = new Configuration(Configuration.VERSION_2_3_22);
         configuration.setDirectoryForTemplateLoading(new File("src\\main\\resources\\templates"));
         configuration.setDefaultEncoding("UTF-8");
         configuration.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
-        Template template = configuration.getTemplate("templates.ftl");
-        File dir = new File("F:/Work/" + packageName.replace(".", "/"));
+        Template template = configuration.getTemplate(templateName);
+        File dir = new File("E:/MyProject/mySpringBoot/src/main/java/" + packageName.replace(".", "/"));
         if (!dir.exists()) {
             dir.mkdirs();
         }
-        OutputStream outputStream = new FileOutputStream(new File(dir, map.get("className") + ".java")); //java文件的生成目录
+        File file = new File(dir, fileName);
+        if (file.exists()){
+            file.delete();
+        }
+        OutputStream outputStream = new FileOutputStream(file); //java文件的生成目录
         Writer out = new OutputStreamWriter(outputStream);
+        map.put("packageName",packageName);
         template.process(map, out);
         outputStream.flush();
         outputStream.close();
         System.out.println("操作成功！");
-        System.out.println("路径："+dir.getAbsolutePath());
+        System.out.println("路径：" + dir.getAbsolutePath());
 
     }
 
+    public static void batchGenerate(String tableName,String classAnnotation) throws Exception {
+        String templateName = "model.ftl";
+        String packageName = "com.dong.web."+templateName.substring(0,templateName.lastIndexOf("."));
+        String fileName = tableName.substring(0, 1).toUpperCase() + tableName.substring(1) + "InfoBean.java";
+
+        //获取元数据
+        Map<String, Object> map = getData(tableName, classAnnotation);
+        conn.close();
+        //生成model
+        new CodeGenerate().generate(map, packageName, fileName, templateName);
+        //生成controller
+        templateName = "controller.ftl";
+        packageName = "com.dong.web."+templateName.substring(0,templateName.lastIndexOf("."));
+        fileName = tableName.substring(0, 1).toUpperCase() + tableName.substring(1) + "InfoController.java";
+        new CodeGenerate().generate(map, packageName, fileName, templateName);
+        //生成service
+        templateName = "service.ftl";
+        packageName = "com.dong.web."+templateName.substring(0,templateName.lastIndexOf("."));
+        fileName = tableName.substring(0, 1).toUpperCase() + tableName.substring(1) + "InfoService.java";
+        new CodeGenerate().generate(map, packageName, fileName, templateName);
+        templateName = "service.impl.ftl";
+        packageName = "com.dong.web."+templateName.substring(0,templateName.lastIndexOf("."));
+        fileName = tableName.substring(0, 1).toUpperCase() + tableName.substring(1) + "InfoServiceImpl.java";
+        new CodeGenerate().generate(map, packageName, fileName, templateName);
+    }
 
     public static void main(String[] args) {
-        String url = "";
-        String username = "";
-        String password = "";
-        String packageName = "com.dong.freemarkerweb";
-        String tableName = "user";
         try {
-            Map<String, Object> map = getData(packageName, tableName);
-            new CodeGenerate().generate(map, packageName);
-            conn.close();
+            batchGenerate("permission","权限");
         } catch (Exception e) {
             e.printStackTrace();
         }

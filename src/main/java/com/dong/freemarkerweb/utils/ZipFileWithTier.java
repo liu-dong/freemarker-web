@@ -10,8 +10,8 @@ import java.util.zip.ZipOutputStream;
  * @date 2020/8/4 17:34
  */
 public class ZipFileWithTier {
-    private static final String srcFiles = "E:\\MyUploadFile\\桥洞";
-    private static final String zipPath = "E:\\MyUploadFile\\桥洞3.zip";
+    private static final String srcFiles = "F:\\MyUploadFile\\meet";
+    private static final String zipPath = "F:\\MyUploadFile\\12.zip";
     private static final String unzipPath = "C:\\temp\\Lemur\\";
 
     public static void main(String[] args) {

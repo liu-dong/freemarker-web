@@ -2,6 +2,7 @@ package com.dong.freemarkerweb.utils;
 
 import java.io.*;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 /**
@@ -14,27 +15,31 @@ public class CompressionDecompressionUtil {
     public static void main(String[] args) {
         try {
 //            CompressionDecompressionUtil.zipFile("F:\\MyUploadFile\\瀑布.jpg", "F:\\MyUploadFile\\瀑布1.zip");
-            CompressionDecompressionUtil.zipFolder("E:\\MyUploadFile\\桥洞", "E:\\MyUploadFile\\桥洞1.zip");
+            CompressionDecompressionUtil.unZipFile("F:\\MyUploadFile\\123.zip", "F:\\MyUploadFile\\14");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+
     /**
-     * 压缩文件
+     * 解压文件
      *
-     * @param filePath    待压缩文件的路径
-     * @param zipFilePath 压缩后文件的路径
+     * @param zipFilePath    压缩文件的路径
+     * @param filePath 解压后文件的路径
      * @throws IOException
      */
-    public static void zipFile(String filePath, String zipFilePath) throws IOException {
-        File file = new File(filePath);//待压缩文件
+    public static void unzipFile(String zipFilePath, String filePath) throws IOException {
+        File file = new File(filePath);
         if (!file.exists()) {
+            file.mkdir();
+        }
+        File zipFile = new File(zipFilePath);//待压缩文件
+        if (!zipFile.exists()) {
             System.out.println("没有该文件");
             return;
         }
-        File zipFile = new File(zipFilePath);//压缩后文件
-        InputStream inputStream = new FileInputStream(file);//定义文件的输入流
+        InputStream inputStream = new FileInputStream(zipFile);//定义文件的输入流
         ZipOutputStream zipOutputStream;// 声明压缩流对象
         zipOutputStream = new ZipOutputStream(new FileOutputStream(zipFile));
         zipOutputStream.putNextEntry(new ZipEntry(file.getName() + File.separator));//设置ZipEntry对象
@@ -49,66 +54,43 @@ public class CompressionDecompressionUtil {
     }
 
     /**
-     * 压缩文件夹
+     * 解压缩
      *
-     * @param folderPath    待压缩文件夹的路径
-     * @param zipFolderPath 压缩后文件夹的路径
+     * @param srcFilePath 需要解压的文件路径
+     * @param destFolder  解压之后存储文件的路径   这个文件路径后面需要加 /
      * @throws IOException
      */
-    public static void zipFolder(String folderPath, String zipFolderPath) throws IOException {
-        File folder = new File(folderPath);//待压缩文件夹
-        if (!folder.exists()) {
-            System.out.println("没有该文件夹");
-            return;
+    public static void unZipFile(String srcFilePath, String destFolder) throws IOException {
+        File filePath = new File(destFolder);
+        if (!filePath.exists()) {
+            filePath.mkdir();
         }
-        File zipFolder = new File(zipFolderPath);//压缩后文件
-        ZipOutputStream zipOutputStream;// 声明压缩流对象
-        zipOutputStream = new ZipOutputStream(new FileOutputStream(zipFolder));
-        zipOutputStream.setComment("com.dong.zipFolder");//设置注释
-        File[] files = folder.listFiles();
-        if (files != null && files.length == 0) {
-            zipOutputStream.putNextEntry(new ZipEntry(folder.getName() + "/"));//设置ZipEntry对象
-            zipOutputStream.closeEntry();
-        }else {
-            System.out.println("该文件夹没有文件");
-            return;
-        }
-        zipOutputStream.close();//关闭输出流
-        System.out.println("文件夹压缩成功");
-    }
+        long start = System.currentTimeMillis();
+        System.out.println("unZipFile beigin : " + start);
+        ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new FileInputStream(srcFilePath)));
+        ZipEntry zipEntry = zis.getNextEntry();
+        while (zipEntry != null) {
+            String fileName = zipEntry.getName();
+            File newFile = new File(destFolder + fileName);
+            if (zipEntry.isDirectory()) {
 
-    /**
-     * 判断是文件还是文件夹
-     *
-     * @param fileFolder
-     * @param zipOutputStream
-     * @throws IOException
-     */
-    public static void isFileFolder(File fileFolder, ZipOutputStream zipOutputStream) throws IOException {
-        InputStream inputStream;//定义文件的输入流
-        if (fileFolder.isDirectory()) {//判断是否是文件夹
-            File[] files = fileFolder.listFiles();
-            if (files != null && files.length > 0) {
-                for (File file : files) {
-                    System.out.println(fileFolder.getName() + File.separator + file.getName());
-                    if (file.isFile()) {
-                        int temp;
-                        zipOutputStream.putNextEntry(new ZipEntry(fileFolder.getName() + File.separator + file.getName()));//设置ZipEntry对象
-                        inputStream = new FileInputStream(file);//定义文件输入流
-                        while ((temp = inputStream.read()) != -1) {//读取内容
-                            zipOutputStream.write(temp);//压缩输出
-                        }
-                        inputStream.close();//关闭输入流
-                    } else {
-                        zipOutputStream.putNextEntry(new ZipEntry(fileFolder.getName() + File.separator + file.getName()));//设置ZipEntry对象
-                        isFileFolder(file, zipOutputStream);
-                    }
-                }
-            }else {
-                System.out.println("该文件夹没有文件");
-                zipOutputStream.putNextEntry(new ZipEntry(fileFolder.getName() + File.separator));//设置ZipEntry对象
             }
 
+            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(newFile));
+
+            byte[] buffer = new byte[1024];
+            int count = -1;
+            while ((count = zis.read(buffer)) > 0) {
+                bos.write(buffer, 0, count);
+            }
+
+            bos.close();
+            System.out.println("unZip file name = " + zipEntry.getName());
+            zipEntry = zis.getNextEntry();
         }
+        zis.closeEntry();
+        zis.close();
+
+        System.out.println("unZipFile end : " + (System.currentTimeMillis() - start) / 1000 + " s");
     }
 }
